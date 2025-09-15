@@ -1,0 +1,386 @@
+<section class="content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">All Users</h3>
+            <div class="card-tools">
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                id="refreshTable"
+              >
+                <i class="fas fa-sync-alt"></i> Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="table-responsive">
+              <table
+                id="usersTable"
+                class="table table-bordered table-striped table-hover"
+              >
+                <thead class="thead-dark">
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userModalTitle">User Details</h5>
+        <button type="button" class="close" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="userModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Status Change Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Status Change</h5>
+        <button type="button" class="close" data-dismiss="modal">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to change the status of this user?</p>
+        <p><strong>Name:</strong> <span id="statusUserName"></span></p>
+        <p><strong>Email:</strong> <span id="statusUserEmail"></span></p>
+        <p>
+          <strong>Current Status:</strong> <span id="statusUserStatus"></span>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" id="confirmStatusChange">
+          Change Status
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .table th,
+  .table td {
+    vertical-align: middle;
+  }
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  .action-buttons .btn {
+    margin-right: 5px;
+  }
+</style>
+
+<script>
+  $(document).ready(function () {
+     const usersTable = $("#usersTable").DataTable({
+      processing: true,
+      serverSide: true,
+      ajax: {
+        url: "/api/users/userlist",
+        type: "GET",
+        data: function (d) {
+          // Send parameters in the simple format your backend expects
+          const requestData = {
+            draw: d.draw,
+            page: Math.floor(d.start / d.length) + 1,
+            limit: d.length,
+            "search[value]": d.search.value || "",
+            "order[0][column]": d.order[0] ? d.order[0].column : 0,
+            "order[0][dir]": d.order[0] ? d.order[0].dir : "asc",
+          };
+
+          return requestData;
+        },
+        dataSrc: function (json) {
+          // Check if we have data
+          if (!json.data || !Array.isArray(json.data)) {
+            console.error("No data array found in response");
+            return [];
+          }
+
+          // Return just the data array - DataTables will handle the rest
+          return json.data;
+        },
+        error: function (xhr, status, error) {
+          console.error("DataTables Error:", xhr.status, xhr.responseText);
+          showToast("Error loading users: " + error, "error");
+        },
+      },
+      columns: [
+        {
+          data: "fullName",
+          render: function (data, type, row) {
+            if (type === "display") {
+              return "<strong>" + (data || "N/A") + "</strong>";
+            }
+            return data || "";
+          },
+        },
+        {
+          data: "email",
+          render: function (data, type, row) {
+            if (type === "display") {
+              return '<a href="mailto:' + data + '">' + data + "</a>";
+            }
+            return data;
+          },
+        },
+        {
+          data: "role",
+          render: function (data, type, row) {
+            if (type === "display") {
+              let badgeClass = "badge-secondary";
+              if (data === "admin") badgeClass = "badge-danger";
+              if (data === "user") badgeClass = "badge-primary";
+              return (
+                '<span class="badge ' +
+                badgeClass +
+                '">' +
+                (data ? data.toUpperCase() : "USER") +
+                "</span>"
+              );
+            }
+            return data || "user";
+          },
+        },
+        {
+          data: "status",
+          render: function (data, type, row) {
+            if (type === "display") {
+              return data; // HTML badge from backend
+            }
+            return row.isActive || ""; // Plain text for sorting
+          },
+        },
+        {
+          data: null,
+          orderable: false,
+          searchable: false,
+          render: function (data, type, row) {
+            return `
+                        <div class="action-buttons">
+                            <button class="btn btn-info btn-sm view-user" 
+                                    data-email="${row.email}" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-warning btn-sm edit-user" 
+                                    data-email="${row.email}" 
+                                    data-name="${row.fullName}" 
+                                    data-status="${row.isActive}" title="Change Status">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    `;
+          },
+        },
+      ],
+      order: [[0, "asc"]],
+      pageLength: 10,
+      lengthMenu: [
+        [5, 10, 25, 50],
+        [5, 10, 25, 50],
+      ],
+      responsive: true,
+      language: {
+        processing:
+          '<div class="spinner-border text-primary" role="status"></div>',
+        emptyTable: "No users found",
+        zeroRecords: "No matching users found",
+        search: "Search users:",
+        lengthMenu: "Show _MENU_ users per page",
+        info: "Showing _START_ to _END_ of _TOTAL_ users",
+        infoFiltered: "(filtered from _MAX_ total users)",
+      },
+      drawCallback: function (settings) {
+        $("[title]").tooltip();
+      },
+    });
+
+    // Refresh button
+    $("#refreshTable").on("click", function () {
+      usersTable.ajax.reload();
+      showToast("Table refreshed", "success");
+    });
+
+    // Status filter change handler
+    $("#statusFilter").on("change", function () {
+      const filterValue = $(this).val();
+
+      usersTable.ajax.reload(); // Reload the table with new filter
+
+      let message = "Showing all users";
+      if (filterValue === "active") message = "Showing active users only";
+      if (filterValue === "inactive") message = "Showing inactive users only";
+
+      showToast(message, "info");
+    });
+
+    // View user details
+    $(document).on("click", ".view-user", function () {
+      const email = $(this).data("email");
+
+      $("#userModalTitle").text("User Details");
+      $("#userModalBody").html(
+        '<div class="text-center"><div class="spinner-border"></div><p>Loading...</p></div>'
+      );
+      $("#userModal").modal("show");
+
+      $.ajax({
+        url: `/api/users/details/${encodeURIComponent(email)}`,
+        type: "GET",
+        success: function (response) {
+          if (response.success && response.data) {
+            const user = response.data;
+            const formatDate = (dateString) => {
+              if (!dateString) return "Not available";
+              return new Date(dateString).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+            };
+
+            $("#userModalBody").html(`
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Full Name:</strong> ${
+                                  user.fullName || "N/A"
+                                }<br>
+                                <strong>Role:</strong> ${
+                                  user.role || "user"
+                                }<br>
+                                <strong>Status:</strong> ${
+                                  user.status || "Unknown"
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Email:</strong> ${user.email}<br>
+                                <strong>Registered:</strong> ${formatDate(
+                                  user.createdAt
+                                )}<br>
+                                <strong>Last Updated:</strong> ${formatDate(
+                                  user.updatedAt
+                                )}
+                            </div>
+                        </div>
+                    `);
+          } else {
+            throw new Error("Failed to load user details");
+          }
+        },
+        error: function (xhr, status, error) {
+          $("#userModalBody").html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Error loading user details: ${error}
+                    </div>
+                `);
+        },
+      });
+    });
+
+    // Edit user (Change Status)
+    $(document).on("click", ".edit-user", function () {
+      const email = $(this).data("email");
+      const name = $(this).data("name");
+      const status = $(this).data("status");
+
+      $("#statusUserName").text(name);
+      $("#statusUserEmail").text(email);
+      $("#statusUserStatus").text(status);
+      $("#confirmStatusChange").data("email", email);
+      $("#statusModal").modal("show");
+    });
+
+    // Confirm status change
+    $("#confirmStatusChange").on("click", function () {
+      const email = $(this).data("email");
+      const button = $(this);
+
+      button
+        .prop("disabled", true)
+        .html(
+          '<span class="spinner-border spinner-border-sm"></span> Changing...'
+        );
+
+      $.ajax({
+        url: `/api/users/account-status/${encodeURIComponent(email)}`,
+        type: "PATCH",
+        success: function (response) {
+          $("#statusModal").modal("hide");
+          usersTable.ajax.reload();
+          showToast(
+            response.message || "Status changed successfully",
+            "success"
+          );
+        },
+        error: function (xhr, status, error) {
+          console.error("Status change error:", error);
+          let errorMsg = "Failed to change status";
+          if (xhr.responseJSON && xhr.responseJSON.message) {
+            errorMsg = xhr.responseJSON.message;
+          }
+          showToast(errorMsg, "error");
+        },
+        complete: function () {
+          button.prop("disabled", false).text("Change Status");
+        },
+      });
+    });
+
+    // Toast notification
+    function showToast(message, type = "info") {
+      if (typeof Swal !== "undefined") {
+        const Toast = Swal.mixin({
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+        });
+        Toast.fire({ icon: type, title: message });
+      } else {
+        console.log(`${type.toUpperCase()}: ${message}`);
+      }
+    }
+
+    window.showToast = showToast;
+  });
+</script>

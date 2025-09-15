@@ -1,0 +1,380 @@
+<!-- Small boxes (Stat box) -->
+<div class="row">
+  <div class="col-lg-3 col-6">
+    <!-- small box -->
+    <div class="small-box bg-info">
+      <div class="inner">
+        <h3 id="orderCount">
+          <div
+            class="spinner-border spinner-border-sm text-white"
+            role="status"
+          >
+            <span class="sr-only">Loading...</span>
+          </div>
+        </h3>
+        <p>New Orders</p>
+      </div>
+      <div class="icon">
+        <i class="ion ion-bag"></i>
+      </div>
+      <a href="/admin/orders?status=Pending" class="small-box-footer"
+        >More info <i class="fas fa-arrow-circle-right"></i
+      ></a>
+    </div>
+  </div>
+  <!-- ./col -->
+  <div class="col-lg-3 col-6">
+    <!-- small box -->
+    <div class="small-box bg-success">
+      <div class="inner">
+        <h3 id="deliveredCount">
+          <div
+            class="spinner-border spinner-border-sm text-white"
+            role="status"
+          >
+            <span class="sr-only">Loading...</span>
+          </div>
+        </h3>
+        <p>Delivered Orders</p>
+      </div>
+      <div class="icon">
+        <i class="ion ion-stats-bars"></i>
+      </div>
+      <a href="/admin/orders?status=Delivered" class="small-box-footer"
+        >More info <i class="fas fa-arrow-circle-right"></i
+      ></a>
+    </div>
+  </div>
+  <!-- ./col -->
+  <div class="col-lg-3 col-6">
+    <!-- small box -->
+    <div class="small-box bg-warning">
+      <div class="inner">
+        <h3 id="activeUserCount">
+          <div
+            class="spinner-border spinner-border-sm text-white"
+            role="status"
+          >
+            <span class="sr-only">Loading...</span>
+          </div>
+        </h3>
+        <p>Users</p>
+      </div>
+      <div class="icon">
+        <i class="ion ion-person-add"></i>
+      </div>
+      <a href="/admin/users" class="small-box-footer"
+        >More info <i class="fas fa-arrow-circle-right"></i
+      ></a>
+    </div>
+  </div>
+  <!-- ./col -->
+  <div class="col-lg-3 col-6">
+    <!-- small box -->
+    <div class="small-box bg-danger">
+      <div class="inner">
+        <h3 id="totalRevenue">
+          <div
+            class="spinner-border spinner-border-sm text-white"
+            role="status"
+          >
+            <span class="sr-only">Loading...</span>
+          </div>
+        </h3>
+        <p>Total Revenue</p>
+      </div>
+      <div class="icon">
+        <i class="ion ion-pie-graph"></i>
+      </div>
+      <a href="#" class="small-box-footer"
+        >More info <i class="fas fa-arrow-circle-right"></i
+      ></a>
+    </div>
+  </div>
+  <!-- ./col -->
+</div>
+<!-- /.row -->
+
+<!-- Additional Stats Row -->
+<div class="row">
+  <div class="col-lg-3 col-6">
+    <div class="info-box">
+      <span class="info-box-icon bg-info"
+        ><i class="fas fa-shopping-cart"></i
+      ></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Products</span>
+        <span class="info-box-number" id="productCount">
+          <div class="spinner-border spinner-border-sm" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="info-box">
+      <span class="info-box-icon bg-success"><i class="fas fa-tags"></i></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Categories</span>
+        <span class="info-box-number" id="categoryCount">
+          <div class="spinner-border spinner-border-sm" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="info-box">
+      <span class="info-box-icon bg-warning"><i class="fas fa-clock"></i></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Pending Orders</span>
+        <span class="info-box-number" id="pendingOrders">
+          <div class="spinner-border spinner-border-sm" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="info-box">
+      <span class="info-box-icon bg-danger"
+        ><i class="fas fa-exclamation-triangle"></i
+      ></span>
+      <div class="info-box-content">
+        <span class="info-box-text">Low Stock Items</span>
+        <span class="info-box-number" id="lowStockCount">
+          <div class="spinner-border spinner-border-sm" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    const REFRESH_INTERVAL = 30000; // 30 seconds
+
+    loadDashboardData();
+
+    setInterval(function () {
+      loadDashboardData();
+      // loadRecentOrders();
+    }, REFRESH_INTERVAL);
+
+    // Manual refresh buttons
+    $("#refreshCharts").on("click", function () {
+      loadDashboardData();
+      showToast("Charts refreshed", "success");
+    });
+
+    // $("#refreshOrders").on("click", function () {
+    //   loadRecentOrders();
+    //   showToast("Orders refreshed", "success");
+    // });
+
+    // $("#refreshStatus").on("click", function () {
+    //   loadSystemStatus();
+    //   showToast("Status refreshed", "success");
+    // });
+
+    // Load main dashboard statistics
+    function loadDashboardData() {
+      $.ajax({
+        url: "/admin/dashboard/stats",
+        type: "GET",
+        success: function (response) {
+          if (response.data) {
+            updateStatBoxes(response.data);
+          }
+        },
+        error: function (xhr, status, error) {
+          console.error("Error loading dashboard data:", error);
+          showError();
+        },
+      });
+    }
+
+    // Update stat boxes with data
+    function updateStatBoxes(data) {
+      // Animate numbers
+      animateNumber("#orderCount", data.orderCount || 0);
+      animateNumber("#deliveredCount", data.deliveredCount || 0);
+      animateNumber("#activeUserCount", data.activeUser || 0);
+      animateNumber(
+        "#totalRevenue",
+        "₹" + (data.totalRevenue || 0).toLocaleString()
+      );
+      animateNumber("#productCount", data.productCount || 0);
+      animateNumber("#categoryCount", data.categoryCount || 0);
+      animateNumber("#pendingOrders", data.pendingOrders || 0);
+      animateNumber("#lowStockCount", data.lowStockCount || 0);
+    }
+
+    // Animate number changes
+    function animateNumber(selector, endValue) {
+      const element = $(selector);
+      const isSpinner = element.find(".spinner-border").length > 0;
+
+      if (isSpinner) {
+        element.html(endValue);
+        element.hide().fadeIn(500);
+      } else {
+        // Simple animation for number changes
+        element.fadeOut(200, function () {
+          element.html(endValue).fadeIn(300);
+        });
+      }
+    }
+
+    // Load recent orders
+    // function loadRecentOrders() {
+    //   $.ajax({
+    //     url: "/api/dashboard/recent-orders", // Adjust this URL
+    //     type: "GET",
+    //     success: function (response) {
+    //       updateRecentOrdersTable(response.data || []);
+    //     },
+    //     error: function (xhr, status, error) {
+    //       console.error("Error loading recent orders:", error);
+    //       $("#recentOrdersTable").html(
+    //         '<tr><td colspan="5" class="text-center text-danger">Error loading orders</td></tr>'
+    //       );
+    //     },
+    //   });
+    // }
+
+    // Update recent orders table
+    // function updateRecentOrdersTable(orders) {
+    //   let html = "";
+
+    //   if (orders.length === 0) {
+    //     html =
+    //       '<tr><td colspan="5" class="text-center text-muted">No recent orders found</td></tr>';
+    //   } else {
+    //     orders.forEach((order) => {
+    //       const statusClass = getStatusBadgeClass(order.status);
+    //       html += `
+    //                 <tr>
+    //                     <td><small class="text-muted">${order.id.substring(
+    //                       0,
+    //                       8
+    //                     )}...</small></td>
+    //                     <td>${order.customerName}</td>
+    //                     <td>₹${parseFloat(order.amount).toFixed(2)}</td>
+    //                     <td><span class="badge ${statusClass}">${
+    //         order.status
+    //       }</span></td>
+    //                     <td><small>${new Date(
+    //                       order.date
+    //                     ).toLocaleDateString()}</small></td>
+    //                 </tr>
+    //             `;
+    //     });
+    //   }
+
+    //   $("#recentOrdersTable").html(html);
+    // }
+
+    // Get status badge class
+    function getStatusBadgeClass(status) {
+      switch (status.toLowerCase()) {
+        case "pending":
+          return "badge-warning";
+        case "processing":
+          return "badge-info";
+        case "shipped":
+          return "badge-primary";
+        case "delivered":
+          return "badge-success";
+        case "cancelled":
+          return "badge-danger";
+        default:
+          return "badge-secondary";
+      }
+    }
+
+    // Load system status
+    // function loadSystemStatus() {
+    //   $.ajax({
+    //     url: "/api/dashboard/system-status",
+    //     type: "GET",
+    //     success: function (response) {
+    //       if (response.data) {
+    //         updateSystemStatus(response.data);
+    //       }
+    //     },
+    //     error: function (xhr, status, error) {
+    //       console.error("Error loading system status:", error);
+    //       // Set default values on error
+    //       updateSystemStatus({
+    //         database: { status: "Unknown", percentage: 0 },
+    //         server: { status: "Unknown", percentage: 0 },
+    //         storage: { status: "Unknown", percentage: 0 },
+    //       });
+    //     },
+    //   });
+    // }
+
+    // Update system status displays
+    // function updateSystemStatus(data) {
+    //   // Database status
+    //   $("#dbStatus").text(data.database?.status || "Unknown");
+    //   $("#dbProgressBar").css("width", (data.database?.percentage || 0) + "%");
+
+    //   // Server status
+    //   $("#serverStatus").text(data.server?.status || "Unknown");
+    //   $("#serverProgressBar").css(
+    //     "width",
+    //     (data.server?.percentage || 0) + "%"
+    //   );
+
+    //   // Storage status
+    //   $("#storageStatus").text(data.storage?.status || "Unknown");
+    //   $("#storageProgressBar").css(
+    //     "width",
+    //     (data.storage?.percentage || 0) + "%"
+    //   );
+    // }
+
+    // Show error state
+    function showError() {
+      $("#orderCount").html(
+        '<i class="fas fa-exclamation-triangle text-danger"></i>'
+      );
+      $("#deliveredCount").html(
+        '<i class="fas fa-exclamation-triangle text-danger"></i>'
+      );
+      $("#activeUserCount").html(
+        '<i class="fas fa-exclamation-triangle text-danger"></i>'
+      );
+      $("#totalRevenue").html(
+        '<i class="fas fa-exclamation-triangle text-danger"></i>'
+      );
+      showToast("Error loading dashboard data", "error");
+    }
+
+    // Toast notification function
+    function showToast(message, type = "info") {
+      if (typeof Swal !== "undefined") {
+        const Toast = Swal.mixin({
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+        });
+        Toast.fire({ icon: type, title: message });
+      } else {
+        console.log(message);
+      }
+    }
+
+    // Make showToast globally available
+    window.showToast = showToast;
+  });
+</script>

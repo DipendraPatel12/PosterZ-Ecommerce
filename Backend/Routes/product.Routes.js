@@ -1,0 +1,98 @@
+const express = require("express");
+const router = express.Router();
+const authenticateToken = require("../Middlewares/authenticateToken");
+
+const {
+  setProduct,
+  getProduct,
+  deleteProduct,
+  updateProduct,
+  setFavouriteProduct,
+  removeFromFavouriteProduct,
+  getCategoryProducts,
+  searchProductsByName,
+  addItemsToTheCart,
+  removeItemFromCart,
+  updateItemInCart,
+  getFavouriteProducts,
+  addFavouritesToCart,
+  createOrder,
+  getOrders,
+  cancelOrder,
+  getAllCategory,
+  getOrderDetails,
+  changeOrderStatus,
+  bulkproducts,
+  getProductByCategoryId,
+  getProductByCategoryName,
+  datatabel,
+  AllProduct,
+} = require("../Controllers/product.Controller");
+
+const upload = require("../Middlewares/multer");
+router.get("/all-products",AllProduct)
+
+router.post("/add", authenticateToken, upload.single("image"), setProduct);
+
+router.get("/search", authenticateToken, searchProductsByName);
+router.get("/details/:productId", authenticateToken, getProduct);
+router.delete("/:productId", authenticateToken, deleteProduct);
+router.patch(
+  "/update-product/:productId",
+  authenticateToken,
+  upload.single("image"),
+  updateProduct
+);
+
+router.post(
+  "/add-favourite/:productId",
+  authenticateToken,
+  setFavouriteProduct
+);
+router.delete(
+  "/remove-favourite/:productId",
+  authenticateToken,
+  removeFromFavouriteProduct
+);
+
+router.get("/favourite-product", authenticateToken, getFavouriteProducts);
+router.get("/category-list", authenticateToken, getAllCategory);
+router.get("/category/:categoryId", authenticateToken, getCategoryProducts);
+
+router.post("/add-item/:productId", authenticateToken, addItemsToTheCart);
+
+router.post("/remove-item/:productId", authenticateToken, removeItemFromCart);
+
+router.put("/update-item", authenticateToken, updateItemInCart);
+
+router.post("/add-favourite-to-cart", authenticateToken, addFavouritesToCart);
+
+router.post("/create-order", authenticateToken, createOrder);
+
+router.get("/order/:orderId", authenticateToken, getOrderDetails);
+router.post("/get-orders", authenticateToken, getOrders);
+
+router.put("/cancel-order", authenticateToken, cancelOrder);
+
+router.patch("/order/:orderId/status", authenticateToken, changeOrderStatus);
+
+router.post("/bulk", authenticateToken, bulkproducts);
+router.get("/categories", authenticateToken, getAllCategory);
+router.get(
+  "/categories/:categoryId/products",
+  authenticateToken,
+  getProductByCategoryId
+);
+router.get(
+  "/categories/name/:categoryName/products",
+  authenticateToken,
+  getProductByCategoryName
+);
+
+router.post(
+  "/categories/:categoryId/products/datatable",
+  authenticateToken,
+  datatabel
+);
+
+module.exports = router;
