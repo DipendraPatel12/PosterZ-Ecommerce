@@ -4,7 +4,7 @@ const connectDb = require("./Config/db");
 const path = require("path");
 const passport = require("passport");
 const oauthRoute = require("./Routes/oauth.Routes");
-const cors = require("cors")
+const cors = require("cors");
 const userRoutes = require("./Routes/user.Routes");
 const authRoutes = require("./Routes/auth.Routes");
 const paymentRoutes = require("./Routes/payment.Routes");
@@ -45,7 +45,7 @@ const adminRoutes = require("./Routes/admin.Routes");
 
 const corsOptions = {
   origin: "http://localhost:5173",
-  credentials: true // Allow cookies to be sent with requests
+  credentials: true, // Allow cookies to be sent with requests
 };
 app.use(cors(corsOptions));
 
