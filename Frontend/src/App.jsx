@@ -9,12 +9,13 @@ import ProductDetail from "./pages/ProductDetail.jsx";
 import { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
-import AdminDashboard from "./pages/AdminDashboard.jsx";
-import UploadProduct from "./components/UploadProduct.jsx";
+
 import About from "./pages/about.jsx";
+import PaymentSuccess from "./components/PaymentSuccess";
+import PaymentCancel from "./components/PaymentCancel";
+import OrderDetails from "./components/OrderDetails";
 
 
-import AdminRoute from "./components/AdminRoute";
 
 function App() {
   const cartItems = useSelector((state) => state.cart.cartItems);
@@ -32,15 +33,14 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/collection" element={<Collection />} />
-          <Route path="/about" element={<About/>} />
-      <Route path="/product/:id" element={<ProductDetail />} />
-
+        <Route path="/about" element={<About />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-cancel" element={<PaymentCancel />} />
+        <Route path="/order/:orderId" element={<OrderDetails />} />
         {/* Admin Dashboard Route */}
 
-        <Route element={<AdminRoute />}>
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/add-product" element={<UploadProduct />} />
-        </Route>
+      
       </Routes>
     </>
   );

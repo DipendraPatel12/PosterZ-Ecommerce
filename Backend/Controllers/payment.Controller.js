@@ -20,8 +20,9 @@ const createPayment = async (req, res) => {
     intent: "sale",
     payer: { payment_method: "paypal" },
     redirect_urls: {
-      return_url: "http://localhost:3000/api/pay/payment-success",
-      cancel_url: "http://localhost:3000/api/pay/payment-cancel",
+      // Updated URLs to redirect to frontend routes
+      return_url: "http://localhost:5173/payment-success", // Frontend URL
+      cancel_url: "http://localhost:5173/payment-cancel", // Frontend URL
     },
     transactions: [
       {
@@ -56,9 +57,9 @@ const createPayment = async (req, res) => {
   });
 };
 
-const paymentSuccess = async (req, res) => {
-  const payerId = req.query.PayerID;
-  const paymentId = req.query.paymentId;
+// New API endpoint to handle payment execution
+const executePayment = async (req, res) => {
+  const { payerId, paymentId } = req.body;
 
   const execute_payment_json = { payer_id: payerId };
 
@@ -68,15 +69,20 @@ const paymentSuccess = async (req, res) => {
     async function (error, payment) {
       if (error) {
         console.error(error.response);
-        return res.redirect("/payment-failed");
+        return res.status(400).json({
+          success: false,
+          message: "Payment execution failed",
+          error: error.response || error,
+        });
       }
-      //   console.log("Session orderData:", req.session.orderData);
+
       const orderData = req.session.orderData;
 
       if (!orderData) {
-        return res
-          .status(400)
-          .json({ message: "Order data missing from session" });
+        return res.status(400).json({
+          success: false,
+          message: "Order data missing from session",
+        });
       }
 
       try {
@@ -99,18 +105,21 @@ const paymentSuccess = async (req, res) => {
 
         await newOrder.save();
 
+        // Update product stocks
         for (let orderedProduct of Products) {
           const product = await Product.findById(orderedProduct.ProductId);
           if (!product) {
             return res.status(404).json({
+              success: false,
               message: `Product not found: ${orderedProduct.ProductId}`,
             });
           }
 
           if (product.stock < orderedProduct.quantity) {
-            return res
-              .status(400)
-              .json({ message: `Insufficient stock for ${product.name}` });
+            return res.status(400).json({
+              success: false,
+              message: `Insufficient stock for ${product.name}`,
+            });
           }
 
           product.stock -= orderedProduct.quantity;
@@ -120,14 +129,18 @@ const paymentSuccess = async (req, res) => {
         req.session.orderData = null;
 
         res.status(201).json({
+          success: true,
           message: "Order successfully created and payment completed!",
           order: newOrder,
+          paymentDetails: payment,
         });
       } catch (err) {
         console.error("Error saving order after payment:", err);
-        res
-          .status(500)
-          .json({ message: "Payment succeeded, but order creation failed." });
+        res.status(500).json({
+          success: false,
+          message: "Payment succeeded, but order creation failed.",
+          error: err.message,
+        });
       }
     }
   );
@@ -135,11 +148,14 @@ const paymentSuccess = async (req, res) => {
 
 const paymentCancel = (req, res) => {
   req.session.orderData = null;
-  res.send("Payment was cancelled. Order not created.");
+  res.json({
+    success: false,
+    message: "Payment was cancelled. Order not created.",
+  });
 };
 
 module.exports = {
   createPayment,
+  executePayment, // New export
   paymentCancel,
-  paymentSuccess,
 };

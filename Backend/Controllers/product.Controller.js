@@ -496,7 +496,7 @@ const getOrderDetails = async (req, res) => {
     if (!orderId) {
       return res.status(400).json({ message: "order Id required" });
     }
-    const data = await Order.findById({ _id: orderId }, "-location")
+    const data = await Order.findById({ _id: orderId })
       .populate("userId", "fullName email")
       .lean();
     if (!data) {
@@ -842,17 +842,17 @@ const datatabel = async (req, res) => {
 };
 const AllProduct = async (req, res) => {
   try {
-    
     const product = await Product.find();
-    if(product.length ===0)return res.status(200).json({message:"Product not Available"})
-    res.status(200).json({message:"Products Fetched",product});
+    if (product.length === 0)
+      return res.status(200).json({ message: "Product not Available" });
+    res.status(200).json({ message: "Products Fetched", product });
   } catch (error) {
     console.error("Error while getting all products:", error);
     res.status(500).json({
       error: error.message,
     });
   }
-}
+};
 module.exports = {
   setProduct,
   getProduct,
@@ -875,6 +875,7 @@ module.exports = {
   changeOrderStatus,
   getProductByCategoryId,
   getProductByCategoryName,
-  bulkproducts,datatabel,
-  AllProduct
+  bulkproducts,
+  datatabel,
+  AllProduct,
 };

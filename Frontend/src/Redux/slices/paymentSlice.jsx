@@ -36,29 +36,30 @@ export const createPayPalPayment = createAsyncThunk(
   }
 );
 
-// Async thunk for handling payment success
-export const handlePaymentSuccess = createAsyncThunk(
-  'payment/handlePaymentSuccess',
+// New async thunk for executing payment
+export const executePayment = createAsyncThunk(
+  'payment/executePayment',
   async ({ paymentId, payerId }, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/payment-success?paymentId=${paymentId}&PayerID=${payerId}`,
-        {
-          method: 'GET',
-          credentials: 'include',
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/execute-payment`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ paymentId, payerId }),
+      });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Payment processing failed');
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Payment execution failed');
       }
 
       return data;
     } catch (error) {
       return rejectWithValue({
-        message: error.message || 'Payment processing error',
+        message: error.message || 'Payment execution error',
       });
     }
   }
@@ -74,11 +75,13 @@ export const handlePaymentCancel = createAsyncThunk(
         credentials: 'include',
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
         throw new Error('Failed to cancel payment');
       }
 
-      return { message: 'Payment was cancelled' };
+      return data;
     } catch (error) {
       return rejectWithValue({
         message: error.message || 'Payment cancellation error',
@@ -96,7 +99,9 @@ const paymentSlice = createSlice({
     orderData: null,
     error: null,
     success: false,
+    cancelled: false,
     lastPaymentId: null,
+    paymentDetails: null,
   },
   reducers: {
     clearPaymentState: (state) => {
@@ -105,12 +110,24 @@ const paymentSlice = createSlice({
       state.approvalUrl = null;
       state.error = null;
       state.success = false;
+      state.cancelled = false;
+      state.orderData = null;
+      state.paymentDetails = null;
     },
     resetPaymentError: (state) => {
       state.error = null;
     },
     setPaymentProcessing: (state, action) => {
       state.isProcessing = action.payload;
+    },
+    setPaymentSuccess: (state, action) => {
+      state.success = true;
+      state.orderData = action.payload.order;
+      state.paymentDetails = action.payload.paymentDetails;
+    },
+    setPaymentFailure: (state, action) => {
+      state.success = false;
+      state.error = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -120,6 +137,7 @@ const paymentSlice = createSlice({
         state.isProcessing = true;
         state.error = null;
         state.success = false;
+        state.cancelled = false;
       })
       .addCase(createPayPalPayment.fulfilled, (state, action) => {
         state.isProcessing = false;
@@ -133,33 +151,50 @@ const paymentSlice = createSlice({
         state.approvalUrl = null;
       })
       
-      // Handle Payment Success
-      .addCase(handlePaymentSuccess.pending, (state) => {
+      // Execute Payment
+      .addCase(executePayment.pending, (state) => {
         state.isProcessing = true;
         state.error = null;
       })
-      .addCase(handlePaymentSuccess.fulfilled, (state, action) => {
+      .addCase(executePayment.fulfilled, (state, action) => {
         state.isProcessing = false;
         state.success = true;
         state.orderData = action.payload.order;
+        state.paymentDetails = action.payload.paymentDetails;
         state.error = null;
+        state.approvalUrl = null;
       })
-      .addCase(handlePaymentSuccess.rejected, (state, action) => {
+      .addCase(executePayment.rejected, (state, action) => {
         state.isProcessing = false;
-        state.error = action.payload?.message || 'Payment processing failed';
+        state.error = action.payload?.message || 'Payment execution failed';
+        state.success = false;
       })
       
       // Handle Payment Cancel
+      .addCase(handlePaymentCancel.pending, (state) => {
+        state.isProcessing = true;
+      })
       .addCase(handlePaymentCancel.fulfilled, (state, action) => {
         state.isProcessing = false;
         state.error = null;
         state.success = false;
+        state.cancelled = true;
         state.approvalUrl = null;
         state.paymentData = null;
+      })
+      .addCase(handlePaymentCancel.rejected, (state, action) => {
+        state.isProcessing = false;
+        state.error = action.payload?.message || 'Payment cancellation failed';
       });
   },
 });
 
-export const { clearPaymentState, resetPaymentError, setPaymentProcessing } = paymentSlice.actions;
+export const { 
+  clearPaymentState, 
+  resetPaymentError, 
+  setPaymentProcessing,
+  setPaymentSuccess,
+  setPaymentFailure
+} = paymentSlice.actions;
 
 export default paymentSlice.reducer;
