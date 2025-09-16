@@ -43,16 +43,17 @@ app.set("view engine", "ejs");
 const productRoutes = require("./Routes/product.Routes");
 const adminRoutes = require("./Routes/admin.Routes");
 
+// const corsOptions = {
+//   origin: "http://localhost:5173",
+//   credentials: true, // Allow cookies to be sent with requests
+// };
+
 const corsOptions = {
-  origin: "http://localhost:5173",
-  credentials: true, // Allow cookies to be sent with requests
+  origin: "https://poster-z-ecommerce.vercel.app/",
+  credentials: true // Allow cookies to be sent with requests
 };
 app.use(cors(corsOptions));
 
-// const corsOptions = {
-//     origin: "https://poster-z.vercel.app",
-//     credentials: true // Allow cookies to be sent with requests
-// };
 app.get("/", (req, res) => {
   res.render("authViews/login", {
     layout: false,

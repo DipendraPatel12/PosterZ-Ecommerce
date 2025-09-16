@@ -1,14 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 // API base URL - adjust according to your backend
-const API_BASE_URL = 'http://localhost:3000/api/pay';
-
+// const API_BASE_URL = 'http://localhost:3000/api/pay';
+const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL;
 // Async thunk for creating PayPal payment
 export const createPayPalPayment = createAsyncThunk(
   'payment/createPayPalPayment',
   async (paymentData, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/create-payment`, {
+      const response = await fetch(`${API_BASE_URL}/api/pay/create-payment`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -41,7 +41,7 @@ export const executePayment = createAsyncThunk(
   'payment/executePayment',
   async ({ paymentId, payerId }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/execute-payment`, {
+      const response = await fetch(`${API_BASE_URL}/api/pay/execute-payment`, {
         method: 'POST',
         credentials: 'include',
         headers: {
