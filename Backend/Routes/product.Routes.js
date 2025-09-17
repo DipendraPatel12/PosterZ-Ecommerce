@@ -30,7 +30,7 @@ const {
 } = require("../Controllers/product.Controller");
 
 const upload = require("../Middlewares/multer");
-router.get("/all-products",AllProduct)
+router.get("/all-products", AllProduct);
 
 router.post("/add", authenticateToken, upload.single("image"), setProduct);
 
@@ -69,7 +69,7 @@ router.post("/add-favourite-to-cart", authenticateToken, addFavouritesToCart);
 
 router.post("/create-order", authenticateToken, createOrder);
 
-router.get("/order/:orderId", authenticateToken, getOrderDetails);
+router.get("/order/:orderId", getOrderDetails);
 router.post("/get-orders", authenticateToken, getOrders);
 
 router.put("/cancel-order", authenticateToken, cancelOrder);

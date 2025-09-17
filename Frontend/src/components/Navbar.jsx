@@ -31,6 +31,20 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [menuOpen]);
+
   // Logout handler
   const handleLogout = () => {
     dispatch(logout());
@@ -127,25 +141,30 @@ const Navbar = () => {
               </button>
             </div>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - Fixed positioning */}
             <button
-              className="md:hidden relative z-50 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-all duration-300"
+              className="md:hidden relative z-50 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-all duration-300 flex-shrink-0"
               onClick={() => setMenuOpen(!menuOpen)}
             >
               {menuOpen ? (
-                <FaTimes className="text-gray-700 transform rotate-90 transition-transform duration-300" />
+                <FaTimes className="text-gray-700 transform rotate-0 transition-transform duration-300" size={18} />
               ) : (
-                <FaBars className="text-gray-700" />
+                <FaBars className="text-gray-700" size={18} />
               )}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
-        <div className={`md:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-lg border-b border-gray-200/50 transform transition-all duration-300 ${
-          menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0 pointer-events-none'
-        }`}>
-          <div className="container mx-auto px-4 py-6 space-y-4">
+        {/* Mobile Menu - Fixed positioning and overflow */}
+        <div className={`md:hidden absolute left-0 right-0 w-full bg-white/95 backdrop-blur-lg border-b border-gray-200/50 transform transition-all duration-300 z-30 ${
+          menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
+        }`}
+        style={{ 
+          top: '100%',
+          maxHeight: 'calc(100vh - 5rem)'
+        }}
+        >
+          <div className="container mx-auto px-4 py-6 space-y-4 overflow-y-auto h-full">
             {/* Mobile Navigation */}
             {navigationItems.map((item, index) => (
               <button
@@ -220,6 +239,14 @@ const Navbar = () => {
 
       {/* Spacer to prevent content from being hidden behind fixed navbar */}
       <div className="h-20"></div>
+
+      {/* Mobile Menu Overlay */}
+      {menuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/20 z-30 md:hidden"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
 
       {/* Show Cart Component if `isCartOpen` is true */}
       {isCartOpen && <Cart onClose={() => setIsCartOpen(false)} />}

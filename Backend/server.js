@@ -50,7 +50,7 @@ const adminRoutes = require("./Routes/admin.Routes");
 
 const corsOptions = {
   origin: "https://poster-z-ecommerce.vercel.app",
-  credentials: true // Allow cookies to be sent with requests
+  credentials: true, // Allow cookies to be sent with requests
 };
 app.use(cors(corsOptions));
 
