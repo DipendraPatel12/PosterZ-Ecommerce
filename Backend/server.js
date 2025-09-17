@@ -45,12 +45,13 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI, // your MongoDB connection string
-      collectionName: "sessions",      // optional, default is "sessions"
+      collectionName: "sessions", // optional, default is "sessions"
     }),
     cookie: {
-      secure: process.env.NODE_ENV === "production", // true only in production
+      secure: true, // must be true in production (Vercel uses HTTPS)
       httpOnly: true,
-      maxAge: 1000 * 60 * 5, // 5 minutes
+      sameSite: "none", // important for cross-site cookies
+      maxAge: 1000 * 60 * 5,
     },
   })
 );
