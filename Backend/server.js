@@ -12,6 +12,7 @@ const cookieParser = require("cookie-parser");
 require("./Config/oauth");
 const app = express();
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const port = process.env.PORT || 5000;
 
 app.use(express.static(path.join(__dirname, "public")));
@@ -26,18 +27,33 @@ app.set("layout extractScripts", true);
 app.set("layout extractStyles", true);
 
 // Session setup
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET || "yourSecretKeyHere",
+//     resave: false,
+//     saveUninitialized: false,
+//     cookie: {
+//       secure: false,
+//       maxAge: 1000 * 60 * 5,
+//     },
+//   })
+// );
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "yourSecretKeyHere",
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI, // your MongoDB connection string
+      collectionName: "sessions",      // optional, default is "sessions"
+    }),
     cookie: {
-      secure: false,
-      maxAge: 1000 * 60 * 5,
+      secure: process.env.NODE_ENV === "production", // true only in production
+      httpOnly: true,
+      maxAge: 1000 * 60 * 5, // 5 minutes
     },
   })
 );
-
 app.set("view engine", "ejs");
 
 const productRoutes = require("./Routes/product.Routes");
