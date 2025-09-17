@@ -11,15 +11,19 @@ const PaymentSuccess = () => {
   const { isProcessing, success, error, orderData } = useSelector(state => state.payment);
   const [executionAttempted, setExecutionAttempted] = useState(false);
 
-  useEffect(() => {
-    const paymentId = searchParams.get('paymentId');
-    const payerId = searchParams.get('PayerID');
+ useEffect(() => {
+  const paymentId = searchParams.get('paymentId');
+  const payerId = searchParams.get('PayerID');
 
-    if (paymentId && payerId && !executionAttempted) {
-      setExecutionAttempted(true);
-      dispatch(executePayment({ paymentId, payerId }));
-    }
-  }, [searchParams, dispatch, executionAttempted]);
+  // ✅ get orderId from localStorage (or from redux if you stored it)
+  const orderId = localStorage.getItem('orderId');
+
+  if (paymentId && payerId && orderId && !executionAttempted) {
+    setExecutionAttempted(true);
+    dispatch(executePayment({ paymentId, payerId, orderId })); // ✅ send orderId
+  }
+}, [searchParams, dispatch, executionAttempted]);
+
 
   useEffect(() => {
     if (success && orderData) {

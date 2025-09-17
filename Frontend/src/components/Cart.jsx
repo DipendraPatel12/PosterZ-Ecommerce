@@ -70,6 +70,7 @@ const Cart = ({ onClose }) => {
         name: item.name,
         price: item.price,
         quantity: item.quantity,
+        total: item.price * item.quantity, 
       })),
     };
 

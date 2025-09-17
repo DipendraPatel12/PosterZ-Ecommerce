@@ -2,155 +2,129 @@ const paypal = require("../Config/paypal");
 const Order = require("../Models/order.Model");
 const Product = require("../Models/product.Model");
 
+// CREATE PAYMENT
 const createPayment = async (req, res) => {
-  const { Products, address, location, userId } = req.body;
+  try {
+    const { Products, address, location, userId } = req.body;
 
-  req.session.orderData = {
-    Products,
-    address,
-    location,
-    userId,
-  };
+    // ✅ Safe calculation of total amount
+    const totalAmount =
+      Products && Products.length > 0
+        ? Products.reduce((acc, item) => acc + item.price * item.quantity, 0)
+        : 0;
 
-  const total = Products.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+    // Save "pending" order first
+    const newOrder = new Order({
+      userId,
+      Products:
+        Products?.map((item) => ({
+          productId: item.ProductId,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          total: item.price * item.quantity,
+        })) || [],
+      address,
+      location,
+      totalAmount,
+      status: "pending",
+    });
 
-  const create_payment_json = {
-    intent: "sale",
-    payer: { payment_method: "paypal" },
-    redirect_urls: {
-      // Updated URLs to redirect to frontend routes
-      // return_url: "http://localhost:5173/payment-success", // Frontend URL
-      // cancel_url: "http://localhost:5173/payment-cancel", // Frontend URL
+    await newOrder.save();
 
-     return_url: "https://poster-z-ecommerce.vercel.app/payment-success", // Frontend URL
-     cancel_url: "https://poster-z-ecommerce.vercel.app/payment-cancel", // Frontend URL
+    const create_payment_json = {
+      intent: "sale",
+      payer: { payment_method: "paypal" },
+      redirect_urls: {
+        // return_url: `http://localhost:5173/payment-success?orderId=${newOrder._id}`,
+        // cancel_url: `http://localhost:5173/payment-cancel?orderId=${newOrder._id}`,
+        return_url: `https://poster-z-ecommerce.vercel.app/payment-success?orderId=${newOrder._id}`,
+        cancel_url: `https://poster-z-ecommerce.vercel.app/payment-cancel?orderId=${newOrder._id}`,
 
-    },
-    transactions: [
-      {
-        item_list: {
-          items: Products.map((item) => ({
-            name: item.name,
-            sku: item.ProductId,
-            price: item.price.toString(),
-            currency: "USD",
-            quantity: item.quantity,
-          })),
-        },
-        amount: {
-          currency: "USD",
-          total: total.toFixed(2),
-        },
-        description: "Order payment via PayPal",
+        // ⬆️ Later replace with your deployed frontend URL
       },
-    ],
-  };
+      transactions: [
+        {
+          amount: {
+            currency: "USD",
+            total: totalAmount.toFixed(2).toString(), // ✅ must be string
+          },
+          description: `PosterZ Order for user ${userId}`,
+        },
+      ],
+    };
 
-  paypal.payment.create(create_payment_json, function (error, payment) {
-    if (error) {
-      console.error(error);
-      return res.status(500).json({ error: "Error creating payment" });
-    } else {
+    paypal.payment.create(create_payment_json, (error, payment) => {
+      if (error) {
+        console.error("PayPal error:", error.response);
+        return res.status(500).json({ error: error.response });
+      }
       const approvalUrl = payment.links.find(
-        (link) => link.rel === "approval_url"
+        (l) => l.rel === "approval_url"
       ).href;
-      res.json({ approvalUrl });
-    }
-  });
+      res.json({
+        approvalUrl,
+        orderId: newOrder._id, // ✅ return orderId
+      });
+    });
+  } catch (err) {
+    console.error("Error in createPayment:", err);
+    res.status(500).json({ error: "Payment creation failed" });
+  }
 };
 
-// New API endpoint to handle payment execution
+// EXECUTE PAYMENT
 const executePayment = async (req, res) => {
-  const { payerId, paymentId } = req.body;
+  const { payerId, paymentId, orderId } = req.body;
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return res.status(404).json({ success: false, message: "Order not found" });
+  }
 
   const execute_payment_json = { payer_id: payerId };
 
   paypal.payment.execute(
     paymentId,
     execute_payment_json,
-    async function (error, payment) {
+    async (error, payment) => {
       if (error) {
-        console.error(error.response);
-        return res.status(400).json({
-          success: false,
-          message: "Payment execution failed",
-          error: error.response || error,
-        });
+        console.error("PayPal execute error:", error.response);
+        return res
+          .status(400)
+          .json({ success: false, message: "Payment execution failed", error });
       }
 
-      const orderData = req.session.orderData;
-
-      if (!orderData) {
-        return res.status(400).json({
-          success: false,
-          message: "Order data missing from session",
-        });
-      }
-
-      try {
-        const { Products, address, location, userId } = orderData;
-
-        const updatedProducts = Products.map((item) => ({
-          ...item,
-          total: item.quantity * item.price,
-        }));
-
-        const newOrder = new Order({
-          userId,
-          Products: updatedProducts,
-          address,
-          location: {
-            type: location.type,
-            coordinates: location.coordinates,
-          },
-        });
-
-        await newOrder.save();
-
-        // Update product stocks
-        for (let orderedProduct of Products) {
-          const product = await Product.findById(orderedProduct.ProductId);
-          if (!product) {
-            return res.status(404).json({
-              success: false,
-              message: `Product not found: ${orderedProduct.ProductId}`,
-            });
+      // ✅ Deduct stock safely
+      for (let p of order.Products) {
+        const product = await Product.findById(p.productId);
+        if (product) {
+          if (product.stock >= p.quantity) {
+            product.stock -= p.quantity;
+            await product.save();
+          } else {
+            console.warn(`Not enough stock for product ${product._id}`);
           }
-
-          if (product.stock < orderedProduct.quantity) {
-            return res.status(400).json({
-              success: false,
-              message: `Insufficient stock for ${product.name}`,
-            });
-          }
-
-          product.stock -= orderedProduct.quantity;
-          await product.save();
         }
-
-        req.session.orderData = null;
-
-        res.status(201).json({
-          success: true,
-          message: "Order successfully created and payment completed!",
-          order: newOrder,
-          paymentDetails: payment,
-        });
-      } catch (err) {
-        console.error("Error saving order after payment:", err);
-        res.status(500).json({
-          success: false,
-          message: "Payment succeeded, but order creation failed.",
-          error: err.message,
-        });
       }
+
+      order.status = "Processing";
+      order.paymentInfo = {
+        id: payment.id,
+        state: payment.state,
+      };
+      await order.save();
+
+      res.json({
+        success: true,
+        message: "Payment completed successfully",
+        order,
+      });
     }
   );
 };
 
+// CANCEL PAYMENT
 const paymentCancel = (req, res) => {
   req.session.orderData = null;
   res.json({
@@ -161,6 +135,6 @@ const paymentCancel = (req, res) => {
 
 module.exports = {
   createPayment,
-  executePayment, // New export
+  executePayment,
   paymentCancel,
 };
