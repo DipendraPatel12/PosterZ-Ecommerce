@@ -1,6 +1,7 @@
 const paypal = require("../Config/paypal");
 const Order = require("../Models/order.Model");
 const Product = require("../Models/product.Model");
+
 const createPayment = async (req, res) => {
   const { Products, address, location, userId } = req.body;
 
@@ -21,8 +22,12 @@ const createPayment = async (req, res) => {
     payer: { payment_method: "paypal" },
     redirect_urls: {
       // Updated URLs to redirect to frontend routes
-      return_url: "http://localhost:5173/payment-success", // Frontend URL
-      cancel_url: "http://localhost:5173/payment-cancel", // Frontend URL
+      // return_url: "http://localhost:5173/payment-success", // Frontend URL
+      // cancel_url: "http://localhost:5173/payment-cancel", // Frontend URL
+
+     return_url: "https://poster-z-ecommerce.vercel.app/payment-success", // Frontend URL
+     cancel_url: "https://poster-z-ecommerce.vercel.app/payment-cancel", // Frontend URL
+
     },
     transactions: [
       {
