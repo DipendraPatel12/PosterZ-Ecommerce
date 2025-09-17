@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-
+const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL;
 const OrderDetails = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ const OrderDetails = () => {
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/api/product/order/${orderId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/product/order/${orderId}`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
