@@ -277,7 +277,7 @@ const Login = () => {
               transition={{ duration: 0.6, delay: 0.5 }}
             >
               <button className="flex items-center justify-center px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm hover:bg-white/80 hover:border-gray-300 transition-all duration-300 transform hover:scale-105 group"  onClick={() => {
-window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
+window.location.href = `${import.meta.env. VITE_REACT_APP_API_URL}/auth/google`;
 }}
 >
                 <svg
