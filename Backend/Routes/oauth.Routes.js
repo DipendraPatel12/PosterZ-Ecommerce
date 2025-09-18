@@ -53,7 +53,7 @@ router.get(
 
     // res.redirect("/admin/dashboard");
     // window.location.href = "http://localhost:5173";
-    window.location.href = "https://poster-z-ecommerce.vercel.app";
+    res.redirect("https://poster-z-ecommerce.vercel.app");
   }
 );
 
