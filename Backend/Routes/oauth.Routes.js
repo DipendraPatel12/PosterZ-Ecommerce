@@ -51,7 +51,9 @@ router.get(
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.redirect("/admin/dashboard");
+    // res.redirect("/admin/dashboard");
+    // window.location.href = "http://localhost:5173";
+    window.location.href = "https://poster-z-ecommerce.vercel.app";
   }
 );
 
