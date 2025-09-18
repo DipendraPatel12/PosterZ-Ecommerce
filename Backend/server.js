@@ -14,6 +14,7 @@ const app = express();
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 const port = process.env.PORT || 5000;
+app.set("trust proxy", 1);
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
