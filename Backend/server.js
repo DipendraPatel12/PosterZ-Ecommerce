@@ -13,12 +13,7 @@ require("./Config/oauth");
 const app = express();
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
-<<<<<<< HEAD
 const port = process.env.PORT;
-=======
-const port = process.env.PORT || 5000;
-app.set("trust proxy", 1);
->>>>>>> 5bfdf978917e2a0dc7722359a87f7e4c6f89edf0
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
