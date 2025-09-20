@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser, clearAuthState } from "../Redux/slices/authSlice";
+import { loginUser, clearAuthState, setAuthUser } from "../Redux/slices/authSlice";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
+import axiosClient from "../utils/axiosClient";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -25,12 +26,69 @@ const Login = () => {
     dispatch(loginUser(formData));
   };
 
+  const handleGoogleLogin = () => {
+    console.log("Redirecting to Google OAuth...");
+    window.location.href = `${import.meta.env.VITE_REACT_APP_API_URL}/auth/google`;
+  };
+
+  // IMPROVED OAuth handling function
+  const handleOAuthLogin = async () => {
+    try {
+      console.log("Fetching user data after OAuth success...");
+      const res = await axiosClient.get("/api/auth/me", {
+        withCredentials: true,
+      });
+      
+      console.log("User data received:", res.data);
+      const userData = res.data.data;
+
+      // Use the new setAuthUser action instead of manual dispatch
+      dispatch(setAuthUser({ user: userData }));
+
+      toast.success("Login successful! 🎉");
+      navigate("/");
+    } catch (err) {
+      console.error("Failed to fetch user after OAuth:", err);
+      toast.error("Login failed. Please try again.");
+      // Clean up URL params on error
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  };
+
   useEffect(() => {
+    // Handle OAuth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const oauthSuccess = urlParams.get("success");
+    const oauthError = urlParams.get("error");
+
+    if (oauthSuccess) {
+      console.log("OAuth success detected, fetching user data...");
+      handleOAuthLogin();
+      // Clean up URL params
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (oauthError) {
+      console.log("OAuth error detected:", oauthError);
+      const errorMessages = {
+        auth_failed: "Authentication failed. Please try again.",
+        server_error: "Server error. Please try again later.",
+      };
+      toast.error(errorMessages[oauthError] || "Login failed. Please try again.");
+      // Clean up URL params
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    // Handle regular form login success/error
     dispatch(clearAuthState());
+    
     if (success) {
       toast.success("Login successful! 🎉");
       navigate("/");
     }
+
     if (error) {
       toast.error(error);
     }
@@ -73,7 +131,6 @@ const Login = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              
               <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
                 Welcome Back
               </h1>
@@ -204,7 +261,9 @@ const Login = () => {
                     type="checkbox"
                     className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                   />
-                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                  <span className="ml-2 text-sm text-gray-600">
+                    Remember me
+                  </span>
                 </label>
                 <Link
                   to="/forgot-password"
@@ -276,7 +335,11 @@ const Login = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
             >
-              <button className="flex items-center justify-center px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm hover:bg-white/80 hover:border-gray-300 transition-all duration-300 transform hover:scale-105 group">
+              <button
+                onClick={handleGoogleLogin}
+                type="button"
+                className="flex items-center justify-center px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm hover:bg-white/80 hover:border-gray-300 transition-all duration-300 transform hover:scale-105 group"
+              >
                 <svg
                   className="w-5 h-5 text-red-500 group-hover:animate-pulse"
                   viewBox="0 0 24 24"
@@ -302,8 +365,6 @@ const Login = () => {
                   Google
                 </span>
               </button>
-
-              
             </motion.div>
 
             {/* Sign Up Link */}

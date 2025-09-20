@@ -30,21 +30,21 @@ const signUp = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({
+    const new_user = await User.create({
       fullName,
       email,
       password: hashedPassword,
     });
 
-    const data = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
+    const user = {
+      _id: new_user._id,
+      name: new_user.name,
+      email: new_user.email,
+      role: new_user.role,
     };
     res
       .status(201)
-      .json({ success: true, message: "User Successfully Registered", data });
+      .json({ success: true, message: "User Successfully Registered", user });
   } catch (error) {
     console.error("Error while Registering User", error);
     res.status(500).json({success:false, message: "Internal Server Error" });
@@ -93,7 +93,7 @@ const login = async (req, res) => {
       userId: userExits._id,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
-    const data = {
+    const user = {
       _id: userExits._id,
       name: userExits.name,
       email: userExits.email,
@@ -105,7 +105,7 @@ const login = async (req, res) => {
     await userExits.save();
     res
       .status(200)
-      .json({ success: true, message: "User Successfully Logged in", data });
+      .json({ success: true, message: "User Successfully Logged in", user });
   } catch (error) {
     console.error("Error While logging", error);
     res.status(500).json({success:false, message: "Internal Server Error" });

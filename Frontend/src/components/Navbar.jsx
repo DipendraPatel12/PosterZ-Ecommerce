@@ -3,7 +3,7 @@ import { FaShoppingCart, FaUser, FaBars, FaTimes } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../Redux/slices/authSlice";
+import { logoutUser } from "../Redux/slices/authSlice";
 import Cart from "./Cart";
 
 const Navbar = () => {
@@ -13,58 +13,63 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Get auth state from Redux
-  const { user, token } = useSelector((state) => state.auth);
+  // Get auth state from Redux - FIXED: Removed token dependency
+  const { user } = useSelector((state) => state.auth);
 
   // Get cart items from Redux
   const cartItems = useSelector((state) => state.cart.cartItems);
 
   // Calculate total quantity in cart
   const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-
+useEffect(() => {
+  console.log("🏠 Navbar - Current user state:", user);
+  console.log("🏠 Navbar - User exists:", !!user);
+}, [user]);
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (menuOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
 
     // Cleanup on unmount
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [menuOpen]);
 
   // Logout handler
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logoutUser());
     navigate("/login");
     setMenuOpen(false);
   };
 
   const navigationItems = [
-    { label: 'Home', path: '/' },
-    { label: 'Collection', path: '/collection' },
-    { label: 'About', path: '/about' },
+    { label: "Home", path: "/" },
+    { label: "Collection", path: "/collection" },
+    { label: "About", path: "/about" },
   ];
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50' 
-          : 'bg-white/90 backdrop-blur-sm'
-      }`}>
+      <nav
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+          scrolled
+            ? "bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50"
+            : "bg-white/90 backdrop-blur-sm"
+        }`}
+      >
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             {/* Logo Section */}
@@ -99,7 +104,21 @@ const Navbar = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-4">
-              {token ? (
+              {/* Cart Button for Desktop */}
+              <button
+                className="relative p-2 text-gray-700 hover:text-blue-600 transition-colors duration-300"
+                onClick={() => setIsCartOpen(true)}
+              >
+                <FaShoppingCart className="text-xl" />
+                {totalQuantity > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                    {totalQuantity}
+                  </span>
+                )}
+              </button>
+
+              {/* FIXED: Changed from {token ? ( to {user ? ( */}
+              {user ? (
                 <div className="flex items-center space-x-4">
                   {user?.isAdmin && (
                     <button
@@ -126,19 +145,6 @@ const Navbar = () => {
                   <span>Login</span>
                 </button>
               )}
-
-              {/* Cart Button */}
-              <button
-                className="relative group bg-white border-2 border-gray-200 hover:border-blue-300 rounded-xl p-3 text-gray-700 hover:text-blue-600 transition-all duration-300 transform hover:scale-105"
-                onClick={() => setIsCartOpen(true)}
-              >
-                <FaShoppingCart size={20} className="group-hover:animate-bounce" />
-                {totalQuantity > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse min-w-[1.5rem] text-center">
-                    {totalQuantity > 99 ? '99+' : totalQuantity}
-                  </span>
-                )}
-              </button>
             </div>
 
             {/* Mobile Menu Button - Fixed positioning */}
@@ -147,7 +153,10 @@ const Navbar = () => {
               onClick={() => setMenuOpen(!menuOpen)}
             >
               {menuOpen ? (
-                <FaTimes className="text-gray-700 transform rotate-0 transition-transform duration-300" size={18} />
+                <FaTimes
+                  className="text-gray-700 transform rotate-0 transition-transform duration-300"
+                  size={18}
+                />
               ) : (
                 <FaBars className="text-gray-700" size={18} />
               )}
@@ -156,13 +165,16 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Menu - Fixed positioning and overflow */}
-        <div className={`md:hidden absolute left-0 right-0 w-full bg-white/95 backdrop-blur-lg border-b border-gray-200/50 transform transition-all duration-300 z-30 ${
-          menuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
-        }`}
-        style={{ 
-          top: '100%',
-          maxHeight: 'calc(100vh - 5rem)'
-        }}
+        <div
+          className={`md:hidden absolute left-0 right-0 w-full bg-white/95 backdrop-blur-lg border-b border-gray-200/50 transform transition-all duration-300 z-30 ${
+            menuOpen
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-full opacity-0 pointer-events-none"
+          }`}
+          style={{
+            top: "100%",
+            maxHeight: "calc(100vh - 5rem)",
+          }}
         >
           <div className="container mx-auto px-4 py-6 space-y-4 overflow-y-auto h-full">
             {/* Mobile Navigation */}
@@ -181,7 +193,8 @@ const Navbar = () => {
             ))}
 
             <div className="border-t border-gray-200 pt-4 space-y-3">
-              {token ? (
+              {/* FIXED: Changed from {token ? ( to {user ? ( */}
+              {user ? (
                 <>
                   {user?.isAdmin && (
                     <button
@@ -242,7 +255,7 @@ const Navbar = () => {
 
       {/* Mobile Menu Overlay */}
       {menuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/20 z-30 md:hidden"
           onClick={() => setMenuOpen(false)}
         />

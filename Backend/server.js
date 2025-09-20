@@ -13,7 +13,7 @@ require("./Config/oauth");
 const app = express();
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
-const port = process.env.PORT || 5000;
+const port = process.env.PORT;
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
@@ -64,12 +64,19 @@ const adminRoutes = require("./Routes/admin.Routes");
 //   origin: "http://localhost:5173",
 //   credentials: true, // Allow cookies to be sent with requests
 // };
-
+const CLIENT_URL = process.env.CLIENT_URL;
 const corsOptions = {
-  origin: "https://poster-z-ecommerce.vercel.app",
-  credentials: true, // Allow cookies to be sent with requests
+  origin: CLIENT_URL,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+
+
+   // Allow cookies to be sent with requests
 };
 app.use(cors(corsOptions));
+
+
 
 app.get("/", (req, res) => {
   res.render("authViews/login", {
@@ -83,7 +90,7 @@ app.get("/register", (req, res) => {
   });
 });
 app.use("/admin", adminRoutes);
-app.use("/auth/google", oauthRoute);
+app.use("/auth", oauthRoute);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/product", productRoutes);
