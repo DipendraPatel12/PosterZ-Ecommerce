@@ -49,10 +49,16 @@ router.get(
       // FIXED: Redirect to LOGIN page with success parameter
       res.redirect(`${process.env.CLIENT_URL}/login?success=true`);
 
+<<<<<<< HEAD
     } catch (error) {
       console.error('Auth callback error:', error);
       res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`);
     }
+=======
+    // res.redirect("/admin/dashboard");
+    // window.location.href = "http://localhost:5173";
+    res.redirect("https://poster-z-ecommerce.vercel.app");
+>>>>>>> 5bfdf978917e2a0dc7722359a87f7e4c6f89edf0
   }
 );
 
