@@ -291,10 +291,10 @@ const verifyOtpForResetPass = async (req, res) => {
 
 const resetPassword = async (req, res) => {
   try {
-    const { password } = req.body;
-    const userId = req.user.userId;
+    const { password,email } = req.body;
 
-    const user = await User.findById(userId);
+
+    const user = await User.findOne({email});
     if (!user) return res.status(404).json({ message: "User not found" });
 
     user.password = await bcrypt.hash(password, 10);

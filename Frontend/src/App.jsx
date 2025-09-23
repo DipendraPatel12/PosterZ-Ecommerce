@@ -14,6 +14,7 @@ import About from "./pages/about.jsx";
 import PaymentSuccess from "./components/PaymentSuccess";
 import PaymentCancel from "./components/PaymentCancel";
 import OrderDetails from "./components/OrderDetails";
+import ForgotPassword from "./pages/forgetPass.jsx";
 
 
 
@@ -32,6 +33,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+           <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/collection" element={<Collection />} />
         <Route path="/about" element={<About />} />
         <Route path="/product/:id" element={<ProductDetail />} />

@@ -33,7 +33,7 @@
           <i class="fas fa-cog mr-2"></i> Settings
         </a> -->                   
         <div class="dropdown-divider"></div>
-        <a href="/api/auth/logout" class="dropdown-item" id="logoutBtn">
+        <a href="#" class="dropdown-item" id="logoutBtn">
           <i class="fas fa-sign-out-alt mr-2"></i> Logout
         </a>
       </div>
@@ -47,3 +47,22 @@
     </li>
   </ul>
 </nav>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  $("#logoutBtn").on("click", function (e) {
+    e.preventDefault(); // prevent normal link
+
+    $.ajax({
+      url: "/api/auth/logout",
+      type: "POST",
+      xhrFields: { withCredentials: true }, // if cookies are used
+      success: function (res) {
+        // Redirect to login after successful logout
+        window.location.href = "/";
+      },
+      error: function (xhr) {
+        alert(xhr.responseJSON?.message || "Logout failed");
+      },
+    });
+  });
+</script>
