@@ -64,9 +64,9 @@ const adminRoutes = require("./Routes/admin.Routes");
 //   origin: "http://localhost:5173",
 //   credentials: true, // Allow cookies to be sent with requests
 // };
-const CLIENT_URL = process.env.CLIENT_URL || "https://poster-z-ecommerce.vercel.app";
+const CLIENT_URL = process.env.CLIENT_URL;
 const corsOptions = {
-  origin: CLIENT_URL,
+  origin: "https://poster-z-ecommerce.vercel.app",
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
