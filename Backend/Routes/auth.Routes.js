@@ -15,7 +15,7 @@ const router = express.Router();
 
 router.post("/signup", signUp);
 router.post("/login", login);
-router.post("/logout", logout);
+router.get("/logout", logout);
 const jwt = require("jsonwebtoken");
 const User = require("../Models/user.Model");
 
@@ -23,57 +23,57 @@ const User = require("../Models/user.Model");
 router.get("/me", async (req, res) => {
   try {
     const { accessToken } = req.cookies;
-    
+
     if (!accessToken) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: "Not authenticated - no token found" 
+        message: "Not authenticated - no token found",
       });
     }
 
     // Verify and decode the token
     const decoded = jwt.verify(accessToken, process.env.SECRET_KEY);
     const user = await User.findById(decoded._id).select("-password");
-    
+
     if (!user) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: "User not found" 
+        message: "User not found",
       });
     }
 
-    res.json({ 
+    res.json({
       success: true,
       data: {
         _id: user._id,
         email: user.email,
         fullName: user.fullName,
         role: user.role,
-        isAdmin: user.role === 'admin',
+        isAdmin: user.role === "admin",
         isVerified: user.isVerified,
-        googleId: user.googleId
-      }
+        googleId: user.googleId,
+      },
     });
   } catch (error) {
     console.error("Auth check error:", error);
-    
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ 
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
         success: false,
-        message: "Invalid token" 
+        message: "Invalid token",
       });
     }
-    
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ 
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
         success: false,
-        message: "Token expired" 
+        message: "Token expired",
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       success: false,
-      message: "Server error during authentication" 
+      message: "Server error during authentication",
     });
   }
 });
