@@ -7,10 +7,14 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
     const folder = "Nectar/Product";
+    const cleanFileName = file.originalname
+      .replace(/\s+/g, "_") // replace spaces with underscore
+      .replace(/[^a-zA-Z0-9._-]/g, ""); // remove & % # @ ! etc.
+
     return {
       folder,
       allowed_formats: ["jpg", "jpeg", "png", "webp"],
-      public_id: `${Date.now()}-${file.originalname.replace(/\s/g, "_")}`,
+      public_id: `${Date.now()}-${cleanFileName}`,
       resource_type: "auto",
     };
   },

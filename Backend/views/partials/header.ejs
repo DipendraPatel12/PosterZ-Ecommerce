@@ -31,9 +31,9 @@
         <!-- <div class="dropdown-divider"></div>
         <a href="/admin/settings" class="dropdown-item">
           <i class="fas fa-cog mr-2"></i> Settings
-        </a> -->                   
+        </a> -->
         <div class="dropdown-divider"></div>
-        <a href="#" class="dropdown-item" id="logoutBtn">
+        <a href="/api/auth/logout" class="dropdown-item" id="logoutBtn">
           <i class="fas fa-sign-out-alt mr-2"></i> Logout
         </a>
       </div>
@@ -47,22 +47,26 @@
     </li>
   </ul>
 </nav>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-  $("#logoutBtn").on("click", function (e) {
-    e.preventDefault(); // prevent normal link
+  $(document).ready(function () {
+    $("#logoutBtn").on("click", function (e) {
+      e.preventDefault(); // stop default redirect
 
-    $.ajax({
-      url: "/api/auth/logout",
-      type: "POST",
-      xhrFields: { withCredentials: true }, // if cookies are used
-      success: function (res) {
-        // Redirect to login after successful logout
-        window.location.href = "/";
-      },
-      error: function (xhr) {
-        alert(xhr.responseJSON?.message || "Logout failed");
-      },
+      const logoutUrl = $(this).attr("href");
+
+      showModal({
+        title: "Confirm Logout",
+        message: `<div class="text-center">
+                    <i class="fas fa-sign-out-alt text-danger" style="font-size: 48px; margin-bottom: 10px;"></i>
+                    <p>Are you sure you want to log out?</p>
+                  </div>`,
+        confirmText: "Yes, Logout",
+        showCancel: true,
+        onConfirm: function () {
+          // Perform logout redirect
+          window.location.href = logoutUrl;
+        },
+      });
     });
   });
 </script>
