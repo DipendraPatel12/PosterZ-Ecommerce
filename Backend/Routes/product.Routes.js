@@ -35,7 +35,7 @@ router.get("/all-products", AllProduct);
 router.post("/add", authenticateToken, upload.single("image"), setProduct);
 
 router.get("/search", authenticateToken, searchProductsByName);
-router.get("/details/:productId", authenticateToken, getProduct);
+router.get("/details/:productId", getProduct);
 router.delete("/:productId", authenticateToken, deleteProduct);
 router.patch(
   "/update-product/:productId",
